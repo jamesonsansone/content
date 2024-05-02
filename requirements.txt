@@ -2,3 +2,4 @@ streamlit
 openai
 serpapi
 python-dotenv
+google-search-results

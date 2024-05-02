@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-from serpapi import GoogleSearch
+import serpapi
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -18,7 +18,7 @@ def fetch_serp_data(keyword):
         "api_key": SERPAPI_KEY
     }
     
-    search = GoogleSearch(params)
+    search = serpapi.search(params)
     results = search.get_dict()
     
     if "organic_results" not in results:
