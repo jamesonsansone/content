@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-import serpapi
+from serpapi import GoogleSearch
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,20 +12,21 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
 def fetch_serp_data(keyword):
-    params = {
+    search = GoogleSearch({
         "engine": "google",
         "q": keyword,
         "api_key": os.getenv('SERPAPI_KEY')
-    }
-    
+    })
+
+    result = search.get_dict()
     # Assuming serpapi.search() correctly interfaces with the API
     try:
-        search = serpapi.search(params)  # Use serpapi.search directly as suggested
         results = search.get_dict()
     except Exception as e:
         print("Error retrieving data from SERPAPI:", e)
         return None
-
+    print(search)
+    print(results)
     if "organic_results" not in results:
         print(f"No organic results found for keyword: {keyword}")
         return None
