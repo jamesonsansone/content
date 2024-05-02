@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-import serpapi
+from serpapi import GoogleSearch
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,25 +12,28 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
 def fetch_serp_data(keyword):
-    params = {
+    search = GoogleSearch({
         "engine": "google",
         "q": keyword,
-        "api_key": SERPAPI_KEY
-    }
+        "api_key": os.getenv('SERPAPI_KEY')
+    })
     
-    search = serpapi.search(params)
-    results = search.get_dict()
-    
+    try:
+        results = search.get_dict()  # This should work if the library and API key are correctly set up
+    except Exception as e:
+        print("Error retrieving data from SERPAPI:", e)
+        return None
+
     if "organic_results" not in results:
         print(f"No organic results found for keyword: {keyword}")
         return None
     
-    organic_results = results["organic_results"]
-    related_questions = results.get("related_questions", [])
+    organic_results = results['organic_results']
+    related_questions = results.get('related_questions', [])
     
-    titles = [result["title"] for result in organic_results[:5] if "title" in result]
-    snippets = [result["snippet"] for result in organic_results[:5] if "snippet" in result]
-    questions = [question["question"] for question in related_questions if "question" in question]
+    titles = [result['title'] for result in organic_results[:5] if 'title' in result]
+    snippets = [result['snippet'] for result in organic_results[:5] if 'snippet' in result]
+    questions = [question['question'] for question in related_questions if 'question' in question]
     
     serp_data = {
         "keyword": keyword,
