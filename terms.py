@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-from serpapi import GoogleSearch
+import serpapi
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,7 +12,7 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
 def fetch_serp_data(keyword):
-    search = GoogleSearch({
+    search = serpapi.search({
         "engine": "google",
         "q": keyword,
         "api_key": os.getenv('SERPAPI_KEY')
