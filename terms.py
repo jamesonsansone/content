@@ -12,14 +12,16 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
 def fetch_serp_data(keyword):
-    search = serpapi.search({
+    params = {
         "engine": "google",
         "q": keyword,
         "api_key": os.getenv('SERPAPI_KEY')
-    })
+    }
     
+    # Assuming serpapi.search() correctly interfaces with the API
     try:
-        results = search.get_dict()  # This should work if the library and API key are correctly set up
+        search = serpapi.search(params)  # Use serpapi.search directly as suggested
+        results = search.get_dict()
     except Exception as e:
         print("Error retrieving data from SERPAPI:", e)
         return None
