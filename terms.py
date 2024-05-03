@@ -78,9 +78,9 @@ def generate_content(keyword, outline_text):
             },
             {
                 "role": "user",
-                "content": f"""Create an informative retirement glossary page about '{keyword}'. Begin with an introduction that provides a clear overview of the topic. This article should not be opinionated.  The article should go into detail on '{keyword}' and describe the '{keyword}'in the context of a retirement glossary term. Your content should be similar and semantically related to the following outline:
+                "content": f"""Create an informative retirement glossary page about '{keyword}'. Begin with an introduction that provides a clear overview of the topic. This article should not be opinionated.  The article should go into detail on '{keyword}' and describe the '{keyword}'in the context of a retirement glossary term. Your content should use full and complete sentences to expand upon the outline listed below. Each H2 subheading should be followed by an NLP-friendly paragraph that answers the question and provides valuable insights. Ensure that the content is accessible, encouraging, and informative, while maintaining a friendly and reassuring tone. The article should match the tone and language of the retirement planning industry, focusing on simplifying complex concepts, providing practical solutions, and educating readers on key aspects of the topic.
                 Outline: {outline_text}
-                Each H2 subheading should be followed by an NLP-friendly paragraph that answers the question and provides valuable insights. Try to stick to between 3-6 H2 headlines for each article using the Outline as a good reference point. Ensure that the content is accessible, encouraging, and informative, while maintaining a friendly and reassuring tone. The article should match the tone and language of the retirement planning industry, focusing on simplifying complex concepts, providing practical solutions, and educating readers on key aspects of the topic.
+
                 """
             }
         ]
