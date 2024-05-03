@@ -1,51 +1,10 @@
 import streamlit as st
 from openai import OpenAI
-import serpapi
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-  
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-#SERPAPI_KEY = os.getenv('SERPAPI_KEY')
-
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+# Initialize OpenAI client
 client = OpenAI()
 
-# def fetch_serp_data(keyword):
-#     search = serpapi.search({
-#         "engine": "google",
-#         "q": keyword,
-#         "api_key": os.getenv('SERPAPI_KEY')
-#     })
-    
-#     try:
-#         results = search.get_dict()  # This should work if the library and API key are correctly set up
-#     except Exception as e:
-#         print("Error retrieving data from SERPAPI:", e)
-#         return None
-#     if "organic_results" not in results:
-#         print(f"No organic results found for keyword: {keyword}")
-#         return None
-    
-#     organic_results = results['organic_results']
-#     related_questions = results.get('related_questions', [])
-    
-#     titles = [result['title'] for result in organic_results[:5] if 'title' in result]
-#     snippets = [result['snippet'] for result in organic_results[:5] if 'snippet' in result]
-#     questions = [question['question'] for question in related_questions if 'question' in question]
-    
-#     serp_data = {
-#         "keyword": keyword,
-#         "titles": titles,
-#         "snippets": snippets,
-#         "related_questions": questions
-#     }
-    
-#     print("SERP Data Collected From SERPAPI")
-#     print(serp_data)
-#     return serp_data
-
+# Function to generate outline
 def generate_outline(keyword):
     response = client.chat.completions.create(
         model="gpt-4-turbo",
@@ -65,8 +24,8 @@ def generate_outline(keyword):
     outline_text = response.choices[0].message.content
     return outline_text
 
-
-def generate_content(keyword,outline_text):
+# Function to generate content
+def generate_content(keyword, outline_text):
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
@@ -92,23 +51,29 @@ def generate_content(keyword,outline_text):
     content_text = response.choices[0].message.content
     return content_text
 
-# Button to generate outline
+# Streamlit app
 st.title("Retirement Glossary Term Generator")
 keyword = st.text_input("Enter a keyword:")        
-if st.button("Generate Outline"):
+
+# Text area for outline text
+outline_text = st.text_area("Paste your outline here:", height=400)
+
+# Button to generate article
+if st.button("Generate Article"):
+    if keyword and outline_text:
+        # Generate content based on keyword and outline
+        content_text = generate_content(keyword, outline_text)
+        # Display generated article
+        st.subheader("Generated Article")
+        st.markdown(content_text)
+    else:
+        st.warning("Please enter a keyword and paste your outline.")
+elif st.button("Generate Outline"):
     if keyword:
         # Generate outline
         outline_text = generate_outline(keyword)
         # Display generated outline
         st.subheader("Generated Outline")
         outline_text = st.text_area("Edit the outline if needed:", value=outline_text, height=400)
-        
-        # Button to generate article
-        if st.button("Generate Article"):
-            # Generate content based on outline
-            content_text = generate_content(keyword, outline_text)
-            # Display generated article
-            st.subheader("Generated Article")
-            st.markdown(content_text)
     else:
         st.warning("Please enter a keyword.")
