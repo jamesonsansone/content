@@ -1,8 +1,50 @@
 import streamlit as st
 from openai import OpenAI
+import serpapi
+import os
+from dotenv import load_dotenv
 
-# Initialize OpenAI client
+load_dotenv()
+  
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+#SERPAPI_KEY = os.getenv('SERPAPI_KEY')
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
+
+# def fetch_serp_data(keyword):
+#     search = serpapi.search({
+#         "engine": "google",
+#         "q": keyword,
+#         "api_key": os.getenv('SERPAPI_KEY')
+#     })
+    
+#     try:
+#         results = search.get_dict()  # This should work if the library and API key are correctly set up
+#     except Exception as e:
+#         print("Error retrieving data from SERPAPI:", e)
+#         return None
+#     if "organic_results" not in results:
+#         print(f"No organic results found for keyword: {keyword}")
+#         return None
+    
+#     organic_results = results['organic_results']
+#     related_questions = results.get('related_questions', [])
+    
+#     titles = [result['title'] for result in organic_results[:5] if 'title' in result]
+#     snippets = [result['snippet'] for result in organic_results[:5] if 'snippet' in result]
+#     questions = [question['question'] for question in related_questions if 'question' in question]
+    
+#     serp_data = {
+#         "keyword": keyword,
+#         "titles": titles,
+#         "snippets": snippets,
+#         "related_questions": questions
+#     }
+    
+#     print("SERP Data Collected From SERPAPI")
+#     print(serp_data)
+#     return serp_data
 
 # Function to generate outline
 def generate_outline(keyword):
@@ -32,17 +74,13 @@ def generate_content(keyword, outline_text):
             {
                 "role": "system",
                 "content": """You are a content generation assistant, tasked with creating SEO-optimized glossary entries. Write informative content that simplifies complex financial concepts of retirement planning. The content should:
-                1. Use clear and accessible language 2. Maintain a neutral and informative tone 3. Include sections like definition, usage, benefits, and related terms 4. Avoid editorial opinions and focus on factual information
-                Use Markdown for formatting, with '#' for main titles and '##' for subtitles. Do not include conclusion paragraphs"""
+                1. Use clear and accessible language 2. Maintain a neutral and informative tone 3. Include sections like definition, usage, benefits, and related terms 4. Avoid editorial opinions and focus on factual information 5. Use Markdown for formatting, with '#' for main titles and '##' for subtitles. 6. Do not include conclusion paragraphs 7. Write headlines in sentence case. """
             },
             {
                 "role": "user",
-                "content": f"""Create an informative retirement glossary page about '{keyword}'. Begin with an introduction that provides a clear overview of the topic. This article should not be opinionated.  that goes into detail on '{keyword}' and describes it in the context of a retirement glossary term. Your content should be similar and semantically related to the titles and snippets that are ranking on Page 1 now. Incorporate the following outline:
+                "content": f"""Create an informative retirement glossary page about '{keyword}'. Begin with an introduction that provides a clear overview of the topic. This article should not be opinionated.  The article should go into detail on '{keyword}' and describe the '{keyword}'in the context of a retirement glossary term. Your content should be similar and semantically related to the following outline:
                 Outline: {outline_text}
-                The article should delve into a detailed breakdown of '{keyword}', maintaining a focus on content semantically related to the keyword. 
-                Each H2 subheading should be followed by an NLP-friendly paragraph that answers the question and provides valuable insights. Try to stick to between 3-6 H2 headlines for each article. Ensure that the content is accessible, encouraging, and informative, while maintaining a friendly and reassuring tone.
-                Use Markdown formatting, with '#' for the main title and '##' for subtitles. Do not include a conclusion paragraph or an FAQ section.
-                The article should match the tone and language of the retirement planning industry, focusing on simplifying complex concepts, providing practical solutions, and educating readers on key aspects of the topic.
+                Each H2 subheading should be followed by an NLP-friendly paragraph that answers the question and provides valuable insights. Try to stick to between 3-6 H2 headlines for each article using the Outline as a good reference point. Ensure that the content is accessible, encouraging, and informative, while maintaining a friendly and reassuring tone. The article should match the tone and language of the retirement planning industry, focusing on simplifying complex concepts, providing practical solutions, and educating readers on key aspects of the topic.
                 """
             }
         ]
