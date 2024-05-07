@@ -9,17 +9,16 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
-# Initialize session state for storing article sections
 if 'article' not in st.session_state:
     st.session_state.article = {
         'introduction': None,
-        'benefits': None
+        'benefits': None,
+        'FAQ': None 
     }
 
 if 'outline' not in st.session_state:
     st.session_state.outline = ""
 
-# Function to generate sections using OpenAI
 def generate_section_from_openai(section_key, keyword, user_prompt):
     context = ""
     if section_key != 'outline':
@@ -27,11 +26,14 @@ def generate_section_from_openai(section_key, keyword, user_prompt):
             if value and key != section_key:
                 context += f"\n\n{key.capitalize()}:\n{value}"
 
+    # Include a style reference in the system message
+    style_reference = "401(k): A type of retirement plan that's sponsored by an employer. While 401(k) plan details differ between employers, they often include tax advantages and employee contributions that are deducted from your paycheck."
+
     prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the {section_key} of an article. Be strict in following the prompt. {user_prompt} {context}"
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
-            {"role": "system", "content": "You are a knowledgeable content creator specializing in SEO-optimized articles. Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term."},
+            {"role": "system", "content": f"You are a knowledgeable content creator specializing in SEO-optimized articles.  Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term. Here is an example for 401(k) Term - write in a similar manner: {style_reference}"},
             {"role": "user", "content": prompt}
         ],
         max_tokens=1000
@@ -54,7 +56,7 @@ def generate_outline(keyword):
                 The outline should cover the main topics and subtopics related to '{keyword}'. Use a clear and concise structure, with main topics as level-1 items and subtopics as level-2 items. The outline should clearly delineate sections such as definitions, why it is important, benefits, and frequently asked questions, focusing solely on factual content."""
             }
         ],
-        max_tokens=2000
+        max_tokens=2000 #Possibly lower these tokens. Clean up the the terms. Outline is too long. Only talk about Definitions, Benefits, FAQ, Pull from SERP.
     )
 
     outline_text = response.choices[0].message.content
@@ -179,30 +181,3 @@ if st.button("Show Entire Article"):
     
 #     content_text = response.choices[0].message.content
 #     return content_text
-
-# # Streamlit app
-# st.title("Retirement Glossary Term Generator | Updated")
-# keyword = st.text_input("Enter a keyword:")        
-
-# # Text area for outline text
-# outline_text = st.text_area("Paste your outline here:", height=400)
-
-# # Button to generate article
-# if st.button("Generate Article"):
-#     if keyword and outline_text:
-#         # Generate content based on keyword and outline
-#         content_text = generate_content(keyword, outline_text)
-#         # Display generated article
-#         st.subheader("Generated Article")
-#         st.markdown(content_text)
-#     else:
-#         st.warning("Please enter a keyword and paste your outline.")
-# elif st.button("Generate Outline"):
-#     if keyword:
-#         # Generate outline
-#         outline_text = generate_outline(keyword)
-#         # Display generated outline
-#         st.subheader("Generated Outline")
-#         outline_text = st.text_area("Edit the outline if needed:", value=outline_text, height=400)
-#     else:
-#         st.warning("Please enter a keyword.")
