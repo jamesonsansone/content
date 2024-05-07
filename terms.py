@@ -64,7 +64,7 @@ def generate_outline(keyword):
     return outline_text
 
 # Streamlit User Interface
-st.title("SEO-Friendly Article Generator")
+st.title("Retirement Glossary v2")
 
 # Input for keyword
 keyword = st.text_input("Enter the main keyword for the article:")
