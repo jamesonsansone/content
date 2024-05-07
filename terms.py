@@ -15,7 +15,31 @@ if 'article' not in st.session_state:
         'benefits': None,
         'FAQ': None
     }
+
+if 'outline' not in st.session_state:
+    st.session_state.outline = ""
+
+
+def generate_section_from_openai(section_key, keyword, user_prompt):
+    context = ""
+    if section_key != 'outline':
+        for key, value in st.session_state.article.items():
+            if value and key != section_key:
+                context += f"\n\n{key.capitalize()}:\n{value}"
+
+
+    prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the {section_key} of an article. Be strict in following the prompt. {user_prompt} {context}"
+    response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": f"You are a knowledgeable content creator specializing in SEO-optimized articles.  Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=1000
+    )
     
+    return response.choices[0].message.content
+
 # Add a new section dynamically
 new_section_name = st.text_input("Add a new section (e.g., 'Risks'):")
 if st.button("Add Section"):
