@@ -26,14 +26,12 @@ def generate_section_from_openai(section_key, keyword, user_prompt):
             if value and key != section_key:
                 context += f"\n\n{key.capitalize()}:\n{value}"
 
-    # Include a style reference in the system message
-    style_reference = "401(k): A type of retirement plan that's sponsored by an employer. While 401(k) plan details differ between employers, they often include tax advantages and employee contributions that are deducted from your paycheck."
 
     prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the {section_key} of an article. Be strict in following the prompt. {user_prompt} {context}"
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
-            {"role": "system", "content": f"You are a knowledgeable content creator specializing in SEO-optimized articles.  Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term. Here is an example for 401(k) Term - write in a similar manner: {style_reference}"},
+            {"role": "system", "content": f"You are a knowledgeable content creator specializing in SEO-optimized articles.  Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term.},
             {"role": "user", "content": prompt}
         ],
         max_tokens=1000
@@ -64,7 +62,16 @@ def generate_outline(keyword):
     return outline_text
 
 # Streamlit User Interface
-st.title("Retirement Glossary v2")
+st.title("Retirement Glossary v3")
+
+# Sidebar for style reference
+with st.sidebar:
+    st.header("Style Reference")
+    st.write("Use the following sample as a guideline for writing style:")
+    st.code("401(k): A type of retirement plan that's sponsored by an employer. "
+            "While 401(k) plan details differ between employers, they often include "
+            "tax advantages and employee contributions that are deducted from your paycheck.")
+
 
 # Input for keyword
 keyword = st.text_input("Enter the main keyword for the article:")
