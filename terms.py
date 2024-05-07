@@ -13,83 +13,37 @@ if 'article' not in st.session_state:
     st.session_state.article = {
         'introduction': None,
         'benefits': None,
-        'FAQ': None 
+        'FAQ': None
     }
-
-if 'outline' not in st.session_state:
-    st.session_state.outline = ""
-
-def generate_section_from_openai(section_key, keyword, user_prompt):
-    context = ""
-    if section_key != 'outline':
-        for key, value in st.session_state.article.items():
-            if value and key != section_key:
-                context += f"\n\n{key.capitalize()}:\n{value}"
-
-
-    prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the {section_key} of an article. Be strict in following the prompt. {user_prompt} {context}"
-    response = client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {"role": "system", "content": f"You are a knowledgeable content creator specializing in SEO-optimized articles.  Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=1000
-    )
     
-    return response.choices[0].message.content
-
-# Function to generate the outline using OpenAI
-def generate_outline(keyword):
-    response = client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": f"""You are an expert in creating SEO-friendly content outlines for retirement glossary pages. Your task is to generate a two-level content outline hierarchy based on the provided '{keyword}'. You are writing this article on behalf of Human Interest, a 401(k) retirement plan provider that offers 401(k) retirement benefits to small and medium businesses. You are writing this on behalf of their content marketing team."""
-            },
-            {
-                "role": "user",
-                "content": f"""Generate a two-level content outline for a retirement glossary page about '{keyword}'. Be unique and creative.     
-                The outline should cover the main topics and subtopics related to '{keyword}'. Use a clear and concise structure, with main topics as level-1 items and subtopics as level-2 items. The outline should clearly delineate sections such as definitions, why it is important, benefits, and frequently asked questions, focusing solely on factual content."""
-            }
-        ],
-        max_tokens=2000 #Possibly lower these tokens. Clean up the the terms. Outline is too long. Only talk about Definitions, Benefits, FAQ, Pull from SERP.
-    )
-
-    outline_text = response.choices[0].message.content
-    st.session_state.outline = outline_text
-    return outline_text
-
-# Streamlit User Interface
-st.title("Retirement Glossary v3")
-
-# Sidebar for style reference
-with st.sidebar:
-    st.header("Style Reference")
-    st.write("Use the following sample as a guideline for writing style:")
-    st.code("401(k): A type of retirement plan that's sponsored by an employer. "
-            "While 401(k) plan details differ between employers, they often include "
-            "tax advantages and employee contributions that are deducted from your paycheck.")
-
+# Add a new section dynamically
+new_section_name = st.text_input("Add a new section (e.g., 'Risks'):")
+if st.button("Add Section"):
+    if new_section_name and new_section_name not in st.session_state.article:
+        st.session_state.article[new_section_name] = None
+        st.success(f"Section '{new_section_name}' added.")
+    else:
+        st.error("Please enter a unique section name.")
 
 # Input for keyword
 keyword = st.text_input("Enter the main keyword for the article:")
 
-if st.button("Generate Outline"):
-    if keyword:
-        outline = generate_outline(keyword)
-        st.session_state.outline = outline  # Save the outline to session state for persistent display
+# Manual outline input
+outline_input = st.text_area("Paste your outline here:", height=300, key="outline")
+if outline_input:
+    st.session_state.outline = outline_input  # Save the manually entered outline
 
-# Display the outline persistently if it exists
+# Display the manually entered outline if it exists
 if st.session_state.outline:
     st.markdown("**Outline:**")
     st.write(st.session_state.outline)
 
-# Input for generating other sections
-section_key = st.selectbox("Choose the section to generate", options=['introduction', 'benefits'])
+# Dynamic dropdown that includes any added sections
+section_options = list(st.session_state.article.keys())
+section_key = st.selectbox("Choose the section to generate", options=section_options)
 section_prompt = st.text_area(f"Enter your prompt for the {section_key} section:", height=300)
 
+# Generate content for the selected section
 if st.button(f"Generate {section_key.capitalize()}"):
     if keyword and section_prompt:
         content = generate_section_from_openai(section_key, keyword, section_prompt)
@@ -99,13 +53,20 @@ if st.button(f"Generate {section_key.capitalize()}"):
     else:
         st.error("Please ensure a keyword and prompt are provided.")
 
-# Optional: Display the entire article so far
+# Display the entire article so far
 if st.button("Show Entire Article"):
     for key, value in st.session_state.article.items():
         if value:
             st.subheader(f"{key.capitalize()} Section:")
             st.write(value)
 
+# Sidebar for style reference
+with st.sidebar:
+    st.header("Style Reference")
+    st.write("Use the following sample as a guideline for writing style:")
+    st.code("401(k): A type of retirement plan that's sponsored by an employer. "
+            "While 401(k) plan details differ between employers, they often include "
+            "tax advantages and employee contributions that are deducted from your paycheck.")
 
 # # def fetch_serp_data(keyword):
 # #     search = serpapi.search({
