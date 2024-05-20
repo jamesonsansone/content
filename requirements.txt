@@ -1,6 +1,6 @@
 streamlit
 openai
 google-search-results
-serpapi
 python-dotenv
+    
 

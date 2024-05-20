@@ -1,11 +1,15 @@
 import streamlit as st
 from openai import OpenAI
+# from serpapi import GoogleSearch
+import serpapi
 import os
 import re
+import json
+import pandas as pd
 from dotenv import load_dotenv
 
-load_dotenv()
 
+load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
@@ -17,6 +21,20 @@ if 'article' not in st.session_state:
         'FAQ': None
     }
 
+if 'keywords' not in st.session_state:
+    st.session_state.keywords = []
+
+if 'related_questions_df' not in st.session_state:
+    st.session_state.related_questions_df = None
+
+if 'organic_results_df' not in st.session_state:
+    st.session_state.organic_results_df = None
+
+# Utility functions
+def remove_ansi_escape_codes(text):
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', text)
+
 def extract_keywords(data):
     lines = data.split('\n')
     keywords = []
@@ -27,6 +45,71 @@ def extract_keywords(data):
         if line:
             keywords.append(line)
     return keywords
+
+def fetch_serp_data(keyword):
+    params = {
+        "engine": "google",
+        "q": keyword,
+        "api_key": os.getenv('SERPAPI_KEY')
+    }
+    
+    retries = 3
+    for attempt in range(retries):
+        try:
+            search = serpapi.search(params)
+            raw_results = str(search)  # Convert SerpResults object to string
+            cleaned_results = remove_ansi_escape_codes(raw_results)  # Remove ANSI escape codes
+            
+            # Attempt to parse the cleaned results as JSON
+            results = json.loads(cleaned_results)
+            
+            # Extract related questions
+            related_questions = results.get('related_questions', [])
+            related_questions_data = []
+            for question_entry in related_questions:
+                question = question_entry.get('question', 'No question found')
+                snippet = question_entry.get('snippet', 'No snippet found')
+                link = question_entry.get('link', 'No link found')
+                related_questions_data.append({
+                    "Question": question,
+                    "Snippet": snippet,
+                    "Link": link
+                })
+            
+            # Convert to DataFrame
+            st.session_state.related_questions_df = pd.DataFrame(related_questions_data)
+            
+            # Extract organic results
+            organic_results = results.get('organic_results', [])
+            organic_results_data = []
+            for result_entry in organic_results:
+                position = result_entry.get('position', 'No position found')
+                title = result_entry.get('title', 'No title found')
+                snippet = result_entry.get('snippet', 'No snippet found')
+                organic_results_data.append({
+                    "Position": position,
+                    "Title": title,
+                    "Snippet": snippet
+                })
+            
+            # Convert to DataFrame
+            st.session_state.organic_results_df = pd.DataFrame(organic_results_data)
+            
+            return results  # Return results if successful
+
+        except ConnectionError as e:
+            st.error(f"Connection error: {e}. Retrying ({attempt+1}/{retries})...")
+            time.sleep(2)  # Wait for 2 seconds before retrying
+        except json.JSONDecodeError as e:
+            st.error(f"Error parsing JSON data: {e}")
+            st.text_area("Raw Data", value=cleaned_results, height=300)
+            return None
+        except Exception as e:
+            st.error(f"Error retrieving data from SERPAPI: {e}")
+            return None
+
+    st.error("Failed to retrieve data after multiple attempts.")
+    return None
 
 def generate_seo_content(keyword):
     prompt = f"You are a content marketing specialist that understands user intent. Generate related keywords, SEO questions, and long-tail queries for the keyword to be used for an SEO-friendly article: {keyword}."
@@ -40,18 +123,17 @@ def generate_seo_content(keyword):
     keywords = extract_keywords(data)
     return keywords
 
-
 def generate_section_from_openai(keyword, user_prompt):
     context = ""
     for key, value in st.session_state.article.items():
         if value:
             context += f"\n\n{key.capitalize()}:\n{value}"
 
-    prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the required content to produce a portion of a a retirement glossary term SEO page. Be strict in following the prompt. {user_prompt} {context}"
+    prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the required content to produce a portion of a retirement glossary term SEO page. Be strict in following the prompt. {user_prompt} {context}"
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
-            {"role": "system", "content": "You are a knowledgeable content creator specializing in SEO-optimized articles. Use these inputs to construct a complete SEO-friendly Retirement Glossary Term page. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term. Use sentence case for all headlines."},
+            {"role": "system", "content": "You are a knowledgeable content creator specializing in SEO-optimized articles. Use these inputs to construct a complete SEO-friendly article. Do not be editorial. Be more fact-based and terse. We just want to talk about the target keyword from the context of a dictionary term. Use sentence case for all headlines."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000
@@ -59,20 +141,45 @@ def generate_section_from_openai(keyword, user_prompt):
     
     return response.choices[0].message.content
 
-
-st.header("Retirement Glossary Generator v3")
+st.header("Retirement Glossary Generator v4")
 
 # Input for keyword
 keyword = st.text_input("Enter the main keyword for the article:")
 
-# Generate SEO data
+# Fetch SERP Data
+if st.button("Fetch SERP Data"):
+    if keyword:
+        fetch_serp_data(keyword)
+    else:
+        st.error("Please enter a keyword.")
+
+st.write("---")
+
+# Display SERPAPI DataFrames if they exist
+if st.session_state.related_questions_df is not None:
+    st.write("### Related Questions")
+    st.dataframe(st.session_state.related_questions_df)
+
+if st.session_state.organic_results_df is not None:
+    st.write("### Organic Results")
+    st.dataframe(st.session_state.organic_results_df)
+
+# Generate SEO Data
 if st.button("Generate SEO Data"):
     if keyword:
         keywords = generate_seo_content(keyword)
         st.session_state.keywords = keywords
-        st.write("Keywords, SEO Questions, and Long-Tail Queries:", keywords)
+        st.write("Keywords, SEO Questions, and Long-Tail Queries:")
+        keywords_df = pd.DataFrame(st.session_state.keywords, columns=["Keyword"])
+        st.dataframe(keywords_df)
     else:
         st.error("Please enter a keyword.")
+
+# Display SEO data if it exists
+if st.session_state.keywords:
+    st.write("Keywords, SEO Questions, and Long-Tail Queries:")
+    keywords_df = pd.DataFrame(st.session_state.keywords, columns=["Keyword"])
+    st.dataframe(keywords_df)
 
 # Text area for user to input the content
 user_prompt = st.text_area("""Enter your prompt for generating the content. Include the keywords manually as needed.
@@ -84,7 +191,7 @@ if st.button("Generate Content"):
     if keyword and user_prompt:
         content = generate_section_from_openai(keyword, user_prompt)
         # Add the generated content to the article in session storage
-        st.session_state.article[len(st.session_state.article) + 1] = content
+        st.session_state.article[len(st.session_state.article)] = content
         st.markdown("**Generated Content:**")
         st.write(content)
     else:
@@ -92,11 +199,10 @@ if st.button("Generate Content"):
 
 # Display the entire article so far
 if st.button("Show Entire Article"):
+    st.markdown("### Entire Article")
     for key, value in st.session_state.article.items():
         if value:
             st.write(value)
-
-
 
     # # Sidebar for style reference
     # with st.sidebar:
