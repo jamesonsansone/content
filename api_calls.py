@@ -97,7 +97,7 @@ def generate_seo_content(client, keyword):
 def generate_section_from_openai(client, keyword, user_prompt):
     context = ""
     for key, value in st.session_state.article.items():
-        if value:
+        if value and isinstance(key, str):  # Ensure key is a string
             context += f"\n\n{key.capitalize()}:\n{value}"
 
     prompt = f"Based on the keyword '{keyword}' and following the additional context provided, generate the required content to produce a portion of a retirement glossary term SEO page. Be strict in following the prompt. {user_prompt} {context}"
