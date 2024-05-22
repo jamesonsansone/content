@@ -4,6 +4,7 @@ import pandas as pd
 from config import Config
 from api_calls import fetch_serp_data, generate_seo_content, generate_section_from_openai
 
+
 # Initialize OpenAI client
 client = OpenAI(api_key=Config.OPENAI_API_KEY)
 

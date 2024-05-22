@@ -2,5 +2,8 @@ streamlit
 openai
 google-search-results
 python-dotenv
-    
+streamlit
+openai
+pandas
+requests    
 
